@@ -15,46 +15,68 @@
     <div id="slots"></div>
     
     <script>
-        let slots = ["Feb 10 - 10:00 AM", "Feb 10 - 11:00 AM", "Feb 11 - 2:00 PM"];
-        let bookedSlots = []; // This will be filled dynamically from the backend
+        // Array of available time slots
+        let slots = [
+            "Feb 10 - 10:00 AM", "Feb 10 - 11:00 AM", "Feb 11 - 2:00 PM"
+        ];
 
+        let bookedSlots = []; // This will be populated by the backend
+
+        // Function to fetch booked slots from Flask API
         async function fetchBookedSlots() {
-            let response = await fetch("https://2046-240b-c020-483-9519-995-fe2c-6a6d-a19c.ngrok-free.app/slots");
-            let data = await response.json();
-            bookedSlots = data.bookedSlots;
-            renderSlots();
-        }
-
-        function renderSlots() {
-            let container = document.getElementById("slots");
-            container.innerHTML = "";
-            slots.forEach(slot => {
-                let div = document.createElement("div");
-                div.className = "slot" + (bookedSlots.includes(slot) ? " booked" : "");
-                div.textContent = slot;
-                if (!bookedSlots.includes(slot)) {
-                    div.onclick = () => bookSlot(slot);
-                }
-                container.appendChild(div);
-            });
-        }
-
-        async function bookSlot(slot) {
-            let response = await fetch("https://2046-240b-c020-483-9519-995-fe2c-6a6d-a19c.ngrok-free.app/book", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ slot: slot })
-            });
-
-            let data = await response.json();
-            if (data.status === "success") {
-                alert("You have booked: " + slot);
-                fetchBookedSlots();  // Refresh slots after booking
-            } else {
-                alert("Error: " + data.message);
+            try {
+                // Make API request to Flask backend
+                let response = await fetch("https://2046-240b-c020-483-9519-995-fe2c-6a6d-a19c.ngrok-free.app/slots");
+                let data = await response.json();
+                bookedSlots = data.booked_slots; // Adjusted to match Flask response
+                renderSlots();
+            } catch (error) {
+                console.error("Error fetching booked slots:", error);
             }
         }
 
+        // Function to render the available slots
+        function renderSlots() {
+            let container = document.getElementById("slots");
+            container.innerHTML = ""; // Clear previous content
+
+            slots.forEach(slot => {
+                // Create a div for each time slot
+                let div = document.createElement("div");
+                div.className = "slot" + (bookedSlots.includes(slot) ? " booked" : ""); // If booked, apply 'booked' class
+                div.textContent = slot;
+
+                if (!bookedSlots.includes(slot)) {
+                    // If the slot is available, allow booking
+                    div.onclick = () => bookSlot(slot);
+                }
+
+                container.appendChild(div); // Add slot to the container
+            });
+        }
+
+        // Function to book a selected time slot
+        async function bookSlot(slot) {
+            try {
+                let response = await fetch("https://2046-240b-c020-483-9519-995-fe2c-6a6d-a19c.ngrok-free.app/book", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ slot: slot })
+                });
+
+                let data = await response.json();
+                if (data.status === "success") {
+                    alert("You have booked: " + slot);
+                    fetchBookedSlots(); // Refresh slots after booking
+                } else {
+                    alert("Error: " + data.message);
+                }
+            } catch (error) {
+                console.error("Error booking slot:", error);
+            }
+        }
+
+        // Fetch booked slots when the page loads
         fetchBookedSlots();
     </script>
 
