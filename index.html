@@ -13,9 +13,17 @@
 <body>
     <h1>Choose an Available Time Slot</h1>
     <div id="slots"></div>
+    
     <script>
         let slots = ["Feb 10 - 10:00 AM", "Feb 10 - 11:00 AM", "Feb 11 - 2:00 PM"];
-        let bookedSlots = []; // This will be filled dynamically
+        let bookedSlots = []; // This will be filled dynamically from the backend
+
+        async function fetchBookedSlots() {
+            let response = await fetch("https://2046-240b-c020-483-9519-995-fe2c-6a6d-a19c.ngrok-free.app/slots");
+            let data = await response.json();
+            bookedSlots = data.bookedSlots;
+            renderSlots();
+        }
 
         function renderSlots() {
             let container = document.getElementById("slots");
@@ -31,58 +39,24 @@
             });
         }
 
-        function bookSlot(slot) {
-            bookedSlots.push(slot);
-            alert("You have booked: " + slot);
-            renderSlots();
-            // Here we would send data to backend
-        }
+        async function bookSlot(slot) {
+            let response = await fetch("https://2046-240b-c020-483-9519-995-fe2c-6a6d-a19c.ngrok-free.app/book", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ slot: slot })
+            });
 
-        renderSlots();
-    </script>
-   <script>
-    let slots = ["Feb 10 - 10:00 AM", "Feb 10 - 11:00 AM", "Feb 11 - 2:00 PM"];
-    let bookedSlots = []; // This will be filled dynamically from the backend
-
-    async function fetchBookedSlots() {
-        let response = await fetch("https://2046-240b-c020-483-9519-995-fe2c-6a6d-a19c.ngrok-free.app/slots");
-        let data = await response.json();
-        bookedSlots = data.bookedSlots;
-        renderSlots();
-    }
-
-    function renderSlots() {
-        let container = document.getElementById("slots");
-        container.innerHTML = "";
-        slots.forEach(slot => {
-            let div = document.createElement("div");
-            div.className = "slot" + (bookedSlots.includes(slot) ? " booked" : "");
-            div.textContent = slot;
-            if (!bookedSlots.includes(slot)) {
-                div.onclick = () => bookSlot(slot);
+            let data = await response.json();
+            if (data.status === "success") {
+                alert("You have booked: " + slot);
+                fetchBookedSlots();  // Refresh slots after booking
+            } else {
+                alert("Error: " + data.message);
             }
-            container.appendChild(div);
-        });
-    }
-
-    async function bookSlot(slot) {
-        let response = await fetch("https://2046-240b-c020-483-9519-995-fe2c-6a6d-a19c.ngrok-free.app/book", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ slot: slot })
-        });
-
-        let data = await response.json();
-        if (data.status === "success") {
-            alert("You have booked: " + slot);
-            fetchBookedSlots();
-        } else {
-            alert("Error: " + data.message);
         }
-    }
 
-    fetchBookedSlots();
-</script>
+        fetchBookedSlots();
+    </script>
 
 </body>
 </html>
