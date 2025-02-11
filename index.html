@@ -40,21 +40,24 @@
 
         renderSlots();
     </script>
-    <script>
-    // Define the available slots (static in this example)
+   <script>
     let slots = ["Feb 10 - 10:00 AM", "Feb 10 - 11:00 AM", "Feb 11 - 2:00 PM"];
-    let bookedSlots = []; // This will be populated from the backend
+    let bookedSlots = []; // This will be filled dynamically from the backend
 
-    // Render the slots on the page
+    async function fetchBookedSlots() {
+        let response = await fetch("https://2046-240b-c020-483-9519-995-fe2c-6a6d-a19c.ngrok-free.app/slots");
+        let data = await response.json();
+        bookedSlots = data.bookedSlots;
+        renderSlots();
+    }
+
     function renderSlots() {
         let container = document.getElementById("slots");
         container.innerHTML = "";
         slots.forEach(slot => {
             let div = document.createElement("div");
-            // If the slot is booked (exists in bookedSlots), add the "booked" class
             div.className = "slot" + (bookedSlots.includes(slot) ? " booked" : "");
             div.textContent = slot;
-            // If the slot is not booked, add an onclick handler to book it
             if (!bookedSlots.includes(slot)) {
                 div.onclick = () => bookSlot(slot);
             }
@@ -62,44 +65,24 @@
         });
     }
 
-    // Function to book a slot by sending a POST request to the backend
-    function bookSlot(slot) {
-        fetch("http://127.0.0.1:5000/book", {
+    async function bookSlot(slot) {
+        let response = await fetch("https://2046-240b-c020-483-9519-995-fe2c-6a6d-a19c.ngrok-free.app/book", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ slot: slot })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Slot already booked or an error occurred.");
-            }
-            return response.json();
-        })
-        .then(data => {
-            alert(data.message);
-            // After booking, refresh the list of booked slots from the backend
-            fetchBookedSlots();
-        })
-        .catch(error => {
-            alert(error.message);
         });
+
+        let data = await response.json();
+        if (data.status === "success") {
+            alert("You have booked: " + slot);
+            fetchBookedSlots();
+        } else {
+            alert("Error: " + data.message);
+        }
     }
 
-    // Function to fetch the list of booked slots from the backend
-    function fetchBookedSlots() {
-        fetch("http://127.0.0.1:5000/slots")
-            .then(response => response.json())
-            .then(data => {
-                bookedSlots = data.bookedSlots;
-                renderSlots();
-            })
-            .catch(error => {
-                console.error("Error fetching booked slots:", error);
-            });
-    }
-
-    // On page load, fetch the booked slots from the backend
     fetchBookedSlots();
 </script>
+
 </body>
 </html>
