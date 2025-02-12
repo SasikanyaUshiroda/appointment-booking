@@ -15,20 +15,35 @@
     <div id="slots"></div>
     
     <script>
-        // Array of available time slots
-        let slots = [
-            "Feb 10 - 10:00 AM", "Feb 10 - 11:00 AM", "Feb 11 - 2:00 PM"
-        ];
+        const NGROK_URL = "https://814b-240b-c020-483-9519-995-fe2c-6a6d-a19c.ngrok-free.app";  // ✅ YOUR NGROK URL
 
+        // Generate slots for the rest of February
+        function generateSlots() {
+            let slots = [];
+            let today = new Date();
+            let year = today.getFullYear();
+            let month = today.getMonth(); // 0-based index (0 = Jan, 1 = Feb)
+
+            // Loop through remaining days of the month
+            for (let day = today.getDate(); day <= 29; day++) { 
+                let dateStr = `Feb ${day}`;
+                for (let hour = 9; hour < 17; hour++) { 
+                    slots.push(`${dateStr} - ${hour}:00 AM`);
+                    slots.push(`${dateStr} - ${hour}:30 AM`);
+                }
+            }
+            return slots;
+        }
+
+        let slots = generateSlots();
         let bookedSlots = []; // This will be populated by the backend
 
         // Function to fetch booked slots from Flask API
         async function fetchBookedSlots() {
             try {
-                // Make API request to Flask backend using updated ngrok URL
-                let response = await fetch("https://xxxxxx.ngrok-free.app/slots");
+                let response = await fetch(`${NGROK_URL}/slots`);
                 let data = await response.json();
-                bookedSlots = data.bookedSlots; // Ensure the response key matches Flask's JSON response
+                bookedSlots = data.bookedSlots; 
                 renderSlots();
             } catch (error) {
                 console.error("Error fetching booked slots:", error);
@@ -38,27 +53,25 @@
         // Function to render the available slots
         function renderSlots() {
             let container = document.getElementById("slots");
-            container.innerHTML = ""; // Clear previous content
+            container.innerHTML = "";
 
             slots.forEach(slot => {
-                // Create a div for each time slot
                 let div = document.createElement("div");
-                div.className = "slot" + (bookedSlots.includes(slot) ? " booked" : ""); // If booked, apply 'booked' class
+                div.className = "slot" + (bookedSlots.includes(slot) ? " booked" : ""); 
                 div.textContent = slot;
 
                 if (!bookedSlots.includes(slot)) {
-                    // If the slot is available, allow booking
                     div.onclick = () => bookSlot(slot);
                 }
 
-                container.appendChild(div); // Add slot to the container
+                container.appendChild(div);
             });
         }
 
         // Function to book a selected time slot
         async function bookSlot(slot) {
             try {
-                let response = await fetch("https://xxxxxx.ngrok-free.app/book", {
+                let response = await fetch(`${NGROK_URL}/book`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ slot: slot })
@@ -67,7 +80,7 @@
                 let data = await response.json();
                 if (data.status === "success") {
                     alert("You have booked: " + slot);
-                    fetchBookedSlots(); // Refresh slots after booking
+                    fetchBookedSlots();
                 } else {
                     alert("Error: " + data.message);
                 }
